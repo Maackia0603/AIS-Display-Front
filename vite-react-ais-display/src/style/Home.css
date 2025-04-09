@@ -1,0 +1,27 @@
+/* 全局样式，去除默认的边距和填充 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 隐藏滚动条 */
+body {
+    overflow: hidden;
+}
+
+.home-container {
+    background-image: url('../../public/background.jpg');
+    background-size: cover;
+    background-position: center;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.home-container h1 {
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}    

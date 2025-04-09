@@ -1,0 +1,27 @@
+.custom-menu {
+    background-color: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(5px);
+    display: flex;
+    /* justify-content: center;  item居中*/ 
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    padding-top: 6px; /* 减少顶部内边距 */
+    padding-bottom: 1px; /* 减少底部内边距 */
+    /* 或者直接设置固定高度 */
+    /* height: 50px; */ 
+}
+
+.custom-menu .ant-menu-item {
+    line-height: 20px; /* 调整菜单项的行高 */
+}
+
+.custom-menu img {
+    height: 20px; /* 调整 logo 的高度 */
+}    
+.custom-menu .ant-menu-item a {
+    display: inline-block;
+    transform: translateY(5px); /* 让 a 标签下移*/
+}    
