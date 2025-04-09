@@ -1,32 +1,46 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu } from 'antd';
-import { useNavigate } from 'react-router-dom';
-import logo from '../../public/logo.png'
-import '../style/Header.css'
+import { useNavigate, useLocation } from 'react-router-dom';
+import '../style/Header.css';
 
 const Header = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [selectedKey, setSelectedKey] = useState('home');
+
+  // 路由变化时自动更新选中状态
+  useEffect(() => {
+    // 根据当前路径设置选中项（假设首页路径为 '/'）
+    setSelectedKey(location.pathname === '/' ? 'home' : '');
+  }, [location]);
+
+  const handleLogoClick = () => {
+    navigate('/');
+    setSelectedKey('home');
+  };
+
   const logoItem = {
     key: 'logo',
     label: (
       <img 
-        src={logo} 
+        src="/logo.png"
         alt="logo" 
-        style={{ 
-          height: '35px', 
-          cursor: 'pointer' 
-        }}
-        onClick={() => navigate('/')}
+        style={{ height: '35px', cursor: 'pointer' }}
+        onClick={handleLogoClick}
       />
     ),
-    disabled: true, 
+    disabled: true,
   };
+
   const items = [
     logoItem,
     {
       key: 'home',
       label: (
-        <a onClick={()=>navigate('/')}>
+        <a onClick={() => {
+          navigate('/');
+          setSelectedKey('home'); 
+        }}>
           首页
         </a>
       ),
@@ -34,12 +48,24 @@ const Header = () => {
     {
       key: 'display',
       label: (
-        <a onClick={()=>navigate('/display')}>
+        <a onClick={() => {
+          navigate('/display');
+          setSelectedKey('display');
+        }}>
           轨迹
         </a>
       ),
     },
   ];
-  return <Menu mode="horizontal" items={items} className="custom-menu"/>;
+
+  return (
+    <Menu 
+      mode="horizontal" 
+      items={items} 
+      className="custom-menu"
+      selectedKeys={[selectedKey]}
+    />
+  );
 };
+
 export default Header;
