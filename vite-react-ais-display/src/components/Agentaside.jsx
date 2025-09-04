@@ -1,5 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import '../style/AgentAside.css';
+import useRequest from '../hooks/useRequest.js';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import 'github-markdown-css/github-markdown.css';
+import 'highlight.js/styles/github.css';
 
 function Agentaside() {
   const [panelWidthVw, setPanelWidthVw] = useState(24); // 默认约24vw
@@ -7,9 +13,15 @@ function Agentaside() {
   const startXRef = useRef(0);
   const startWidthRef = useRef(24);
 
-  const [messages, setMessages] = useState([]); // {role:'user'|'assistant', content:string}
+  const [messages, setMessages] = useState([]); // {role:'user'|'assistant', content:string, loading?:boolean, markdown?:boolean}
   const [inputValue, setInputValue] = useState('');
-  const [loading, setLoading] = useState(false);
+
+  const { isLoading, error, doFetch } = useRequest({
+    url: 'http://127.0.0.1:9000/ask',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    lazy: true,
+  });
 
   // 拖拽调整宽度
   const handleMouseDown = (e) => {
@@ -39,27 +51,42 @@ function Agentaside() {
 
   const sendMessage = async () => {
     const content = inputValue.trim();
-    if (!content || loading) return;
+    if (!content || isLoading) return;
 
     const userMsg = { role: 'user', content };
-    const nextHistory = [...messages, userMsg];
-    setMessages(nextHistory);
+    // 先渲染用户消息与一个loading的assistant气泡
+    setMessages(prev => [...prev, userMsg, { role: 'assistant', content: '', loading: true }]);
     setInputValue('');
-    setLoading(true);
 
     try {
-      const resp = await fetch('http://127.0.0.1:9000/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: nextHistory })
+      const payload = await doFetch({
+        body: JSON.stringify({ question: content })
       });
-      const data = await resp.json();
-      const reply = data?.content || data?.message || '抱歉，我没有理解您的问题。';
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+      const replyRaw = (payload && (payload.final || payload.content || payload.message || payload.answer))
+        || (typeof payload === 'string' ? payload : '')
+        || '抱歉，我没有理解您的问题。';
+      // 替换最后一个loading assistant为最终内容（Markdown）
+      setMessages(prev => {
+        const next = [...prev];
+        for (let i = next.length - 1; i >= 0; i--) {
+          if (next[i].role === 'assistant' && next[i].loading) {
+            next[i] = { role: 'assistant', content: replyRaw, loading: false, markdown: true };
+            break;
+          }
+        }
+        return next;
+      });
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: '服务暂不可用，请稍后重试。' }]);
-    } finally {
-      setLoading(false);
+      setMessages(prev => {
+        const next = [...prev];
+        for (let i = next.length - 1; i >= 0; i--) {
+          if (next[i].role === 'assistant' && next[i].loading) {
+            next[i] = { role: 'assistant', content: '服务暂不可用，请稍后重试。', loading: false };
+            break;
+          }
+        }
+        return next;
+      });
     }
   };
 
@@ -84,13 +111,34 @@ function Agentaside() {
       <div className="chat-body">
         <div className="chat-header">调用MCP服务的TEXT2SQL项目</div>
 
+        {!!error && (
+          <div className="chat-empty" style={{ color: '#ff4d4f' }}>
+            获取回复失败：{error.message || '未知错误'}
+          </div>
+        )}
+
         <div className="chat-messages">
           {messages.length === 0 ? (
             <div className="chat-empty">开始您的对话吧！</div>
           ) : (
             messages.map((m, i) => (
-              <div key={i} className={`chat-msg ${m.role}`}>
-                <div className="msg-content">{m.content}</div>
+              <div key={i} className={`chat-msg ${m.role} ${m.loading ? 'loading' : ''}`}>
+                {m.loading ? (
+                  <div className="msg-content"><span className="dot dot1"></span><span className="dot dot2"></span><span className="dot dot3"></span></div>
+                ) : m.markdown ? (
+                  <div className="msg-content">
+                    <div className="markdown-body">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeHighlight]}
+                      >
+                        {m.content}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="msg-content">{m.content}</div>
+                )}
               </div>
             ))
           )}
@@ -102,10 +150,10 @@ function Agentaside() {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={loading}
+            disabled={isLoading}
           />
-          <button onClick={sendMessage} disabled={loading || !inputValue.trim()}>
-            {loading ? '发送中...' : '发送'}
+          <button onClick={sendMessage} disabled={isLoading || !inputValue.trim()}>
+            {isLoading ? '发送中...' : '发送'}
           </button>
         </div>
       </div>
