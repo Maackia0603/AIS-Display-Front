@@ -1,0 +1,105 @@
+/* 右侧可拉伸聊天面板 */
+.chat-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    display: flex;
+    align-items: stretch;
+    z-index: 5;
+    background: rgba(245, 247, 250, 0.98);
+    border-left: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: -6px 0 24px rgba(0, 0, 0, 0.15);
+}
+
+/* 拖拽条 */
+.chat-resizer {
+    width: 6px;
+    cursor: col-resize;
+    background: linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.02));
+}
+.chat-resizer:hover {
+    background: linear-gradient(180deg, rgba(24,144,255,0.35), rgba(24,144,255,0.05));
+}
+
+/* 面板内容 */
+.chat-body {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.chat-header {
+    padding: 12px 14px;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    background: #fff;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    background: #fff;
+}
+
+.chat-empty {
+    color: #8c8c8c;
+    text-align: center;
+    margin-top: 24px;
+}
+
+.chat-msg {
+    margin-bottom: 10px;
+}
+.chat-msg .msg-content {
+    display: inline-block;
+    max-width: 90%;
+    padding: 8px 10px;
+    border-radius: 10px;
+    line-height: 1.5;
+    font-size: 14px;
+}
+.chat-msg.user .msg-content {
+    background: #1677ff;
+    color: #fff;
+}
+.chat-msg.assistant .msg-content {
+    background: #f5f5f5;
+    color: #262626;
+    border: 1px solid #eee;
+}
+
+.chat-input {
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    background: #fff;
+}
+.chat-input textarea {
+    flex: 1;
+    min-height: 40px;
+    max-height: 120px;
+    resize: vertical;
+    padding: 8px 10px;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    outline: none;
+}
+.chat-input textarea:focus {
+    border-color: #1677ff;
+    box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.15);
+}
+.chat-input button {
+    padding: 0 14px;
+    border: none;
+    border-radius: 8px;
+    background: #1677ff;
+    color: #fff;
+    cursor: pointer;
+}
+.chat-input button:disabled {
+    background: #bfbfbf;
+    cursor: not-allowed;
+}
