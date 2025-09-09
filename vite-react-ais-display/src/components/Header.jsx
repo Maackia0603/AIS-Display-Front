@@ -7,24 +7,10 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedKey, setSelectedKey] = useState('home');
-  const [isVisible, setIsVisible] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
-
   // 路由变化时自动更新选中状态
   useEffect(() => {
     setSelectedKey(location.pathname === '/' ? 'home' : '');
   }, [location]);
-
-  // 根据鼠标距离顶部45px控制显隐
-  useEffect(() => {
-    const onMove = (e) => {
-      if (isHovering) return; // 悬停时保持可见
-      const y = e.clientY || 0;
-      setIsVisible(y <= 45);
-    };
-    window.addEventListener('mousemove', onMove);
-    return () => window.removeEventListener('mousemove', onMove);
-  }, [isHovering]);
 
   const handleLogoClick = () => {
     navigate('/');
@@ -85,10 +71,8 @@ const Header = () => {
     <Menu 
       mode="horizontal" 
       items={items} 
-      className={`custom-menu ${isVisible || isHovering ? 'visible' : ''}`}
+      className="custom-menu"
       selectedKeys={[selectedKey]}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
     />
   );
 };

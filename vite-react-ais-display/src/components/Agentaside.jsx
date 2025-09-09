@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'github-markdown-css/github-markdown.css';
 import 'highlight.js/styles/github.css';
+import AgentHeader from './AgentHeader.jsx';
 
 function Agentaside() {
   const [panelWidthVw, setPanelWidthVw] = useState(24); // 默认约24vw
@@ -13,6 +14,7 @@ function Agentaside() {
   const startXRef = useRef(0);
   const startWidthRef = useRef(24);
 
+  const [activeTab, setActiveTab] = useState('chat'); // 当前选中的标签页
   const [messages, setMessages] = useState([]); // {role:'user'|'assistant', content:string, loading?:boolean, markdown?:boolean}
   const [inputValue, setInputValue] = useState('');
 
@@ -97,6 +99,134 @@ function Agentaside() {
     }
   };
 
+  // 渲染聊天页面
+  const renderChatPage = () => (
+    <>
+      {!!error && (
+        <div className="chat-empty" style={{ color: '#ff4d4f' }}>
+          获取回复失败：{error.message || '未知错误'}
+        </div>
+      )}
+
+      <div className="chat-messages">
+        {messages.length === 0 ? (
+          <div className="chat-empty">开始您的对话吧！</div>
+        ) : (
+          messages.map((m, i) => (
+            <div key={i} className={`chat-msg ${m.role} ${m.loading ? 'loading' : ''}`}>
+              {m.loading ? (
+                <div className="msg-content"><span className="dot dot1"></span><span className="dot dot2"></span><span className="dot dot3"></span></div>
+              ) : m.markdown ? (
+                <div className="msg-content">
+                  <div className="markdown-body">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeHighlight]}
+                    >
+                      {m.content}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              ) : (
+                <div className="msg-content">{m.content}</div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="chat-input">
+        <textarea
+          placeholder="请输入你的问题📝"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={isLoading}
+        />
+        <button onClick={sendMessage} disabled={isLoading || !inputValue.trim()}>
+          {isLoading ? '发送中...' : '发送'}
+        </button>
+      </div>
+    </>
+  );
+
+  // 渲染文档页面
+  const renderDocumentPage = () => (
+    <div className="page-content">
+      <div className="page-title">文档管理</div>
+      <div className="page-description">管理和查看您的文档资料</div>
+      <div className="document-list">
+        <div className="document-item">
+          <div className="doc-icon">📄</div>
+          <div className="doc-info">
+            <div className="doc-name">项目说明.md</div>
+            <div className="doc-size">2.3 KB</div>
+          </div>
+        </div>
+        <div className="document-item">
+          <div className="doc-icon">📊</div>
+          <div className="doc-info">
+            <div className="doc-name">数据分析报告.xlsx</div>
+            <div className="doc-size">1.2 MB</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // 渲染上传页面
+  const renderUploadPage = () => (
+    <div className="page-content">
+      <div className="page-title">文件上传</div>
+      <div className="page-description">上传文件用于AI分析和处理</div>
+      <div className="upload-area">
+        <div className="upload-box">
+          <div className="upload-icon">📁</div>
+          <div className="upload-text">点击或拖拽文件到这里上传</div>
+          <div className="upload-hint">支持 .txt, .md, .csv, .json, .pdf 等格式</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // 渲染设置页面
+  const renderSettingsPage = () => (
+    <div className="page-content">
+      <div className="page-title">设置</div>
+      <div className="page-description">配置您的偏好设置</div>
+      <div className="settings-list">
+        <div className="setting-item">
+          <div className="setting-label">主题模式</div>
+          <div className="setting-value">自动</div>
+        </div>
+        <div className="setting-item">
+          <div className="setting-label">语言设置</div>
+          <div className="setting-value">简体中文</div>
+        </div>
+        <div className="setting-item">
+          <div className="setting-label">AI 模型</div>
+          <div className="setting-value">GPT-4</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // 根据当前标签页渲染内容
+  const renderPageContent = () => {
+    switch (activeTab) {
+      case 'chat':
+        return renderChatPage();
+      case 'document':
+        return renderDocumentPage();
+      case 'upload':
+        return renderUploadPage();
+      case 'settings':
+        return renderSettingsPage();
+      default:
+        return renderChatPage();
+    }
+  };
+
   return (
     <aside
       className="chat-panel"
@@ -109,53 +239,12 @@ function Agentaside() {
       />
 
       <div className="chat-body">
-        <div className="chat-header">调用MCP服务的TEXT2SQL项目</div>
-
-        {!!error && (
-          <div className="chat-empty" style={{ color: '#ff4d4f' }}>
-            获取回复失败：{error.message || '未知错误'}
-          </div>
-        )}
-
-        <div className="chat-messages">
-          {messages.length === 0 ? (
-            <div className="chat-empty">开始您的对话吧！</div>
-          ) : (
-            messages.map((m, i) => (
-              <div key={i} className={`chat-msg ${m.role} ${m.loading ? 'loading' : ''}`}>
-                {m.loading ? (
-                  <div className="msg-content"><span className="dot dot1"></span><span className="dot dot2"></span><span className="dot dot3"></span></div>
-                ) : m.markdown ? (
-                  <div className="msg-content">
-                    <div className="markdown-body">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeHighlight]}
-                      >
-                        {m.content}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="msg-content">{m.content}</div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="chat-input">
-          <textarea
-            placeholder="请输入你的问题📝"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isLoading}
-          />
-          <button onClick={sendMessage} disabled={isLoading || !inputValue.trim()}>
-            {isLoading ? '发送中...' : '发送'}
-          </button>
-        </div>
+        <AgentHeader 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
+        />
+        
+        {renderPageContent()}
       </div>
     </aside>
   );

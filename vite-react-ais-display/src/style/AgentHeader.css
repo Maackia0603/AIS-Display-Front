@@ -1,0 +1,66 @@
+.agent-header {
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.95);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.agent-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.agent-header-menu {
+    width: 100%;
+    max-width: 320px;
+}
+
+.agent-header-menu .ant-segmented-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 12px;
+    padding: 4px 6px;
+    min-height: 28px;
+    flex: 1;
+}
+
+.agent-header-menu .ant-segmented-item-selected {
+    background: rgba(24, 144, 255, 0.1);
+    color: #1677ff;
+}
+
+.agent-header-menu .ant-segmented-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.agent-header-menu .ant-segmented-item-selected:hover {
+    background: rgba(24, 144, 255, 0.15);
+}
+
+/* 响应式适配 */
+@media (max-width: 480px) {
+    .agent-header-menu {
+        max-width: 100%;
+    }
+    
+    .agent-header-menu .ant-segmented-item {
+        font-size: 11px;
+        padding: 3px 4px;
+        gap: 2px;
+    }
+}
+
+/* 窄面板适配（当面板宽度较小时） */
+@media (max-width: 600px) {
+    .agent-header-menu .ant-segmented-item {
+        font-size: 11px;
+        padding: 4px 4px;
+    }
+}
+
+}
