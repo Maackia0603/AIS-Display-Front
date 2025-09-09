@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import '../style/AgentAside.css';
 import useRequest from '../hooks/useRequest.js';
 import ReactMarkdown from 'react-markdown';
@@ -9,11 +9,6 @@ import 'highlight.js/styles/github.css';
 import AgentHeader from './AgentHeader.jsx';
 
 function Agentaside() {
-  const [panelWidthVw, setPanelWidthVw] = useState(24); // 默认约24vw
-  const [isResizing, setIsResizing] = useState(false);
-  const startXRef = useRef(0);
-  const startWidthRef = useRef(24);
-
   const [activeTab, setActiveTab] = useState('chat'); // 当前选中的标签页
   const [messages, setMessages] = useState([]); // {role:'user'|'assistant', content:string, loading?:boolean, markdown?:boolean}
   const [inputValue, setInputValue] = useState('');
@@ -25,31 +20,6 @@ function Agentaside() {
     lazy: true,
   });
 
-  // 拖拽调整宽度
-  const handleMouseDown = (e) => {
-    setIsResizing(true);
-    startXRef.current = e.clientX;
-    startWidthRef.current = panelWidthVw;
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!isResizing) return;
-      const deltaX = startXRef.current - e.clientX; // 往左拖动为正值（面板变宽）
-      const vw = Math.max(document.documentElement.clientWidth || window.innerWidth, 1);
-      const deltaVw = (deltaX / vw) * 100;
-      let next = startWidthRef.current + deltaVw;
-      next = Math.max(15, Math.min(40, next)); // 限制 15vw - 40vw
-      setPanelWidthVw(next);
-    };
-    const handleMouseUp = () => setIsResizing(false);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isResizing]);
 
   const sendMessage = async () => {
     const content = inputValue.trim();
@@ -228,16 +198,7 @@ function Agentaside() {
   };
 
   return (
-    <aside
-      className="chat-panel"
-      style={{ width: `${panelWidthVw}vw` }}
-    >
-      <div
-        className="chat-resizer"
-        onMouseDown={handleMouseDown}
-        title="拖拽调整宽度"
-      />
-
+    <aside className="chat-panel">
       <div className="chat-body">
         <AgentHeader 
           activeTab={activeTab} 

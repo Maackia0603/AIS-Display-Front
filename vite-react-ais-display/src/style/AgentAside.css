@@ -1,8 +1,9 @@
-/* 右侧可拉伸聊天面板 */
+/* 右侧固定聊天面板 */
 .chat-panel {
     position: absolute;
     top: var(--header-height, 0px);
     right: 0;
+    width: 400px; /* 固定宽度 */
     height: calc(100vh - var(--header-height, 0px));
     display: flex;
     align-items: stretch;
@@ -12,27 +13,12 @@
     box-shadow: -6px 0 24px rgba(0, 0, 0, 0.15);
 }
 
-/* 拖拽条置顶并覆盖，避免被内容遮挡 */
-.chat-resizer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 4px; /* 扩大可点击区域 */
-    cursor: col-resize;
-    z-index: 10;
-    background: linear-gradient(180deg, rgba(0,0,0,0.00), rgba(0,0,0,0.00));
-}
-.chat-resizer:hover {
-    background: linear-gradient(180deg, rgba(24,144,255,0.15), rgba(24,144,255,0.05));
-}
-
 /* 面板内容 */
 .chat-body {
     display: flex;
     flex-direction: column;
     width: 100%;
-    margin-left: 10px; /* 为绝对定位的拖拽条留出空间 */
+    height: 100%;
     position: relative;
     z-index: 1;
 }
@@ -282,4 +268,21 @@
 .setting-value {
     color: #1677ff;
     font-size: 14px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .chat-panel {
+        width: 100%;
+        right: 0;
+        left: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .chat-panel {
+        width: 100%;
+        height: calc(100vh - var(--header-height, 0px) - 60px);
+        bottom: 0;
+    }
 }
