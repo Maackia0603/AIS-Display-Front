@@ -7,6 +7,9 @@ import rehypeHighlight from 'rehype-highlight';
 import 'github-markdown-css/github-markdown.css';
 import 'highlight.js/styles/github.css';
 import AgentHeader from './AgentHeader.jsx';
+import AgentDocument from './AgentDocument.jsx';
+import AgentUpload from './AgentUpload.jsx';
+import AgentSetting from './AgentSetting.jsx';
 
 function Agentaside() {
   const [activeTab, setActiveTab] = useState('chat'); // 当前选中的标签页
@@ -120,66 +123,6 @@ function Agentaside() {
     </>
   );
 
-  // 渲染文档页面
-  const renderDocumentPage = () => (
-    <div className="page-content">
-      <div className="page-title">文档管理</div>
-      <div className="page-description">管理和查看您的文档资料</div>
-      <div className="document-list">
-        <div className="document-item">
-          <div className="doc-icon">📄</div>
-          <div className="doc-info">
-            <div className="doc-name">项目说明.md</div>
-            <div className="doc-size">2.3 KB</div>
-          </div>
-        </div>
-        <div className="document-item">
-          <div className="doc-icon">📊</div>
-          <div className="doc-info">
-            <div className="doc-name">数据分析报告.xlsx</div>
-            <div className="doc-size">1.2 MB</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // 渲染上传页面
-  const renderUploadPage = () => (
-    <div className="page-content">
-      <div className="page-title">文件上传</div>
-      <div className="page-description">上传文件用于AI分析和处理</div>
-      <div className="upload-area">
-        <div className="upload-box">
-          <div className="upload-icon">📁</div>
-          <div className="upload-text">点击或拖拽文件到这里上传</div>
-          <div className="upload-hint">支持 .txt, .md, .csv, .json, .pdf 等格式</div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // 渲染设置页面
-  const renderSettingsPage = () => (
-    <div className="page-content">
-      <div className="page-title">设置</div>
-      <div className="page-description">配置您的偏好设置</div>
-      <div className="settings-list">
-        <div className="setting-item">
-          <div className="setting-label">主题模式</div>
-          <div className="setting-value">自动</div>
-        </div>
-        <div className="setting-item">
-          <div className="setting-label">语言设置</div>
-          <div className="setting-value">简体中文</div>
-        </div>
-        <div className="setting-item">
-          <div className="setting-label">AI 模型</div>
-          <div className="setting-value">GPT-4</div>
-        </div>
-      </div>
-    </div>
-  );
 
   // 根据当前标签页渲染内容
   const renderPageContent = () => {
@@ -187,11 +130,11 @@ function Agentaside() {
       case 'chat':
         return renderChatPage();
       case 'document':
-        return renderDocumentPage();
+        return <AgentDocument />;
       case 'upload':
-        return renderUploadPage();
+        return <AgentUpload />;
       case 'settings':
-        return renderSettingsPage();
+        return <AgentSetting />;
       default:
         return renderChatPage();
     }
