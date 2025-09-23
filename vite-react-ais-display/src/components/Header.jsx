@@ -64,6 +64,17 @@ const Header = () => {
           智能体
         </a>
       ),
+    },
+    {
+      key: 'geojsondisplay',
+      label: (
+        <a onClick={() => {
+          navigate('/geojsondisplay');
+          setSelectedKey('geojsondisplay');
+        }}>
+          信息显示
+        </a>
+      ),
     }
   ];
 
