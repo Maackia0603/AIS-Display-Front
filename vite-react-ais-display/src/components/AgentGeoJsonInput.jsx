@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Button, Input, Space, Divider, Typography, message, Alert } from 'antd';
-import { PlayCircleOutlined, ClearOutlined, FileTextOutlined, FormatPainterOutlined } from '@ant-design/icons';
+import { EyeOutlined, ClearOutlined, FileTextOutlined, FormatPainterOutlined } from '@ant-design/icons';
 import '../style/AgentGeoJsonInput.css';
 
 const { TextArea } = Input;
 const { Text } = Typography;
 
-const AgentGeoJsonInput = () => {
+const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
   const [geoJsonText, setGeoJsonText] = useState('');
   const [errorInfo, setErrorInfo] = useState(null);
 
@@ -20,36 +20,15 @@ const AgentGeoJsonInput = () => {
           "description": "示例多边形区域"
         },
         "geometry": {
-          "type": "MultiPolygon",
-          "coordinates": [
-            [[[2.000667596, 40.9995], [0.999332404, 40.9995], [0.999332404, 41.043193172], [1.7897344, 41.2255211], [2.000667596, 40.9995]]]
-          ]
-        }
-      },
-      {
-        "type": "Feature",
-        "properties": {
-          "name": "多边形区域B",
-          "description": "另一个示例多边形区域"
-        },
-        "geometry": {
-          "type": "MultiPolygon",
-          "coordinates": [
-            [[[1.5, 41.0], [1.0, 41.0], [1.0, 41.5], [1.5, 41.5], [1.5, 41.0]]],
-            [[[2.5, 40.8], [2.0, 40.8], [2.0, 41.3], [2.5, 41.3], [2.5, 40.8]]]
-          ]
-        }
-      },
-      {
-        "type": "Feature",
-        "properties": {
-          "name": "简单多边形",
-          "description": "单个多边形示例"
-        },
-        "geometry": {
           "type": "Polygon",
           "coordinates": [
-            [[1.2, 40.7], [1.8, 40.7], [1.8, 41.1], [1.2, 41.1], [1.2, 40.7]]
+            [
+              [116.3974, 39.9042],
+              [116.4074, 39.9042],
+              [116.4074, 39.9142],
+              [116.3974, 39.9142],
+              [116.3974, 39.9042]
+            ]
           ]
         }
       }
@@ -76,15 +55,67 @@ const AgentGeoJsonInput = () => {
     }
     
     try {
-      JSON.parse(geoJsonText);
+      const parsedGeoJson = JSON.parse(geoJsonText);
+      
+      // 验证是否是有效的 GeoJSON 格式
+      if (!isValidGeoJson(parsedGeoJson)) {
+        setErrorInfo('数据格式不符合 GeoJSON 规范，请检查数据结构');
+        message.error('GeoJSON 格式不正确');
+        return;
+      }
+      
       setErrorInfo(null); // 清除错误信息
-      message.success('GeoJSON格式验证通过！');
-      // 这里后续可以添加可视化逻辑
+      
+      // 调用回调函数更新地图
+      if (onGeoJsonUpdate) {
+        onGeoJsonUpdate(parsedGeoJson);
+      }
+      
+      message.success('GeoJSON 数据已成功可视化到地图！');
     } catch (error) {
       const errorMessage = `JSON解析错误：${error.message}`;
       setErrorInfo(errorMessage);
-      message.error('GeoJSON格式错误，请查看详细错误信息');
+      message.error('JSON格式错误，请查看详细错误信息');
     }
+  };
+
+  // 验证 GeoJSON 格式
+  const isValidGeoJson = (geoJson) => {
+    if (!geoJson || typeof geoJson !== 'object') return false;
+    
+    // 检查是否是 FeatureCollection
+    if (geoJson.type === 'FeatureCollection') {
+      return geoJson.features && Array.isArray(geoJson.features) &&
+             geoJson.features.every(feature => isValidFeature(feature));
+    }
+    
+    // 检查是否是单个 Feature
+    if (geoJson.type === 'Feature') {
+      return isValidFeature(geoJson);
+    }
+    
+    // 检查是否是几何对象
+    if (isValidGeometry(geoJson)) {
+      return true;
+    }
+    
+    return false;
+  };
+
+  // 验证 Feature 对象
+  const isValidFeature = (feature) => {
+    return feature && 
+           feature.type === 'Feature' &&
+           feature.geometry &&
+           isValidGeometry(feature.geometry);
+  };
+
+  // 验证几何对象
+  const isValidGeometry = (geometry) => {
+    if (!geometry || !geometry.type || !geometry.coordinates) return false;
+    
+    const validTypes = ['Point', 'LineString', 'Polygon', 'MultiPoint', 'MultiLineString', 'MultiPolygon'];
+    return validTypes.includes(geometry.type) && Array.isArray(geometry.coordinates);
   };
 
   const handleBeautify = () => {
@@ -164,10 +195,10 @@ const AgentGeoJsonInput = () => {
         <Space>
           <Button
             type="primary"
-            icon={<PlayCircleOutlined />}
+            icon={<EyeOutlined />}
             onClick={handleVisualize}
           >
-            验证格式
+            可视化到地图
           </Button>
           <Button
             icon={<FormatPainterOutlined />}

@@ -12,7 +12,7 @@ import AgentUpload from './AgentUpload.jsx';
 import AgentSetting from './AgentSetting.jsx';
 import AgentGeoJsonInput from './AgentGeoJsonInput.jsx';
 
-function Agentaside() {
+function Agentaside({ onGeoJsonUpdate = null }) {
   const [activeTab, setActiveTab] = useState('chat'); // 当前选中的标签页
   const [messages, setMessages] = useState([]); // {role:'user'|'assistant', content:string, loading?:boolean, markdown?:boolean}
   const [inputValue, setInputValue] = useState('');
@@ -131,7 +131,7 @@ function Agentaside() {
       case 'chat':
         return renderChatPage();
       case 'geojson':
-        return <AgentGeoJsonInput />;
+        return <AgentGeoJsonInput onGeoJsonUpdate={onGeoJsonUpdate} />;
       case 'upload':
         return <AgentUpload />;
       case 'settings':
