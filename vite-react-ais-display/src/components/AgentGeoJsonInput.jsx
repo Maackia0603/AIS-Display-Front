@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Button, Input, Space, Divider, Typography, message } from 'antd';
-import { PlayCircleOutlined, ClearOutlined, FileTextOutlined } from '@ant-design/icons';
+import { Button, Input, Space, Divider, Typography, message, Alert } from 'antd';
+import { PlayCircleOutlined, ClearOutlined, FileTextOutlined, FormatPainterOutlined } from '@ant-design/icons';
 import '../style/AgentGeoJsonInput.css';
 
 const { TextArea } = Input;
@@ -8,6 +8,7 @@ const { Text } = Typography;
 
 const AgentGeoJsonInput = () => {
   const [geoJsonText, setGeoJsonText] = useState('');
+  const [errorInfo, setErrorInfo] = useState(null);
 
   const sampleGeoJson = {
     "type": "FeatureCollection",
@@ -56,12 +57,15 @@ const AgentGeoJsonInput = () => {
   };
 
   const handleLoadSample = () => {
-    setGeoJsonText(JSON.stringify(sampleGeoJson, null, 2));
-    message.info('示例数据已加载');
+    // 加载压缩格式的JSON，方便测试美化功能
+    setGeoJsonText(JSON.stringify(sampleGeoJson));
+    setErrorInfo(null); // 清除错误信息
+    message.info('示例数据已加载（压缩格式）');
   };
 
   const handleClear = () => {
     setGeoJsonText('');
+    setErrorInfo(null); // 清除错误信息
     message.info('数据已清空');
   };
 
@@ -73,10 +77,33 @@ const AgentGeoJsonInput = () => {
     
     try {
       JSON.parse(geoJsonText);
+      setErrorInfo(null); // 清除错误信息
       message.success('GeoJSON格式验证通过！');
       // 这里后续可以添加可视化逻辑
-    } catch {
-      message.error('GeoJSON格式错误，请检查数据格式');
+    } catch (error) {
+      const errorMessage = `JSON解析错误：${error.message}`;
+      setErrorInfo(errorMessage);
+      message.error('GeoJSON格式错误，请查看详细错误信息');
+    }
+  };
+
+  const handleBeautify = () => {
+    if (!geoJsonText.trim()) {
+      message.warning('请输入JSON数据');
+      return;
+    }
+    
+    try {
+      const parsedJson = JSON.parse(geoJsonText);
+      const beautifiedJson = JSON.stringify(parsedJson, null, 2);
+      setGeoJsonText(beautifiedJson);
+      setErrorInfo(null); // 清除错误信息
+      message.success('JSON格式化完成！');
+    } catch (error) {
+      const errorMessage = `JSON解析错误：${error.message}`;
+      setErrorInfo(errorMessage);
+      console.error('JSON解析错误:', error);
+      message.error('JSON格式错误，请查看详细错误信息');
     }
   };
 
@@ -105,12 +132,32 @@ const AgentGeoJsonInput = () => {
       <div className="input-area">
         <TextArea
           value={geoJsonText}
-          onChange={(e) => setGeoJsonText(e.target.value)}
+          onChange={(e) => {
+            setGeoJsonText(e.target.value);
+            // 用户输入时清除错误信息
+            if (errorInfo) {
+              setErrorInfo(null);
+            }
+          }}
           placeholder="请输入GeoJSON数据，或点击上方按钮加载示例..."
           className="geojson-textarea"
           rows={15}
         />
       </div>
+
+      {/* 错误信息显示区域 */}
+      {errorInfo && (
+        <div className="error-display" style={{ margin: '12px 0' }}>
+          <Alert
+            message="JSON 格式错误"
+            description={errorInfo}
+            type="error"
+            showIcon
+            closable
+            onClose={() => setErrorInfo(null)}
+          />
+        </div>
+      )}
 
       {/* 底部操作按钮 */}
       <div className="input-footer">
@@ -121,6 +168,12 @@ const AgentGeoJsonInput = () => {
             onClick={handleVisualize}
           >
             验证格式
+          </Button>
+          <Button
+            icon={<FormatPainterOutlined />}
+            onClick={handleBeautify}
+          >
+            美化格式
           </Button>
           <Button
             icon={<ClearOutlined />}
