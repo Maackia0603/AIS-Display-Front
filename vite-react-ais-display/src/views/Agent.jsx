@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import DeckGL from '@deck.gl/react';
 import { Map } from 'react-map-gl/maplibre';
 import { GeoJsonLayer } from '@deck.gl/layers';
@@ -65,7 +65,7 @@ function Agent() {
   };
 
   // 聚焦到 GeoJSON 区域
-  const focusOnGeoJson = (geoJson) => {
+  const focusOnGeoJson = useCallback((geoJson) => {
     try {
       const bounds = calculateBounds(geoJson);
       
@@ -91,17 +91,17 @@ function Agent() {
       else if (maxDiff > 0.1) zoom = 11;
       else zoom = 14;
 
-      setViewState({
-        ...viewState,
+      setViewState(prev => ({
+        ...prev,
         longitude: centerLng,
         latitude: centerLat,
         zoom: zoom,
         transitionDuration: 1000
-      });
+      }));
     } catch (error) {
       console.error('聚焦到GeoJSON时出错:', error);
     }
-  };
+  }, [setViewState]);
 
   // 处理 GeoJSON 数据更新
   const handleGeoJsonUpdate = (geoJson) => {
@@ -110,6 +110,28 @@ function Agent() {
       focusOnGeoJson(geoJson);
     }
   };
+
+  // 全局函数
+  React.useEffect(() => {
+    // 只聚焦不更新数据的函数
+    window.focusOnGeoJsonOnly = (geoJson) => {
+      if (geoJson) {
+        focusOnGeoJson(geoJson);
+      }
+    };
+
+    // 只更新数据不聚焦的函数
+    window.updateGeoJsonOnly = (geoJson) => {
+      setGeoJsonData(geoJson);
+      // 不调用 focusOnGeoJson
+    };
+
+    // 清理函数
+    return () => {
+      delete window.focusOnGeoJsonOnly;
+      delete window.updateGeoJsonOnly;
+    };
+  }, [focusOnGeoJson]);
 
   // 创建 GeoJSON 图层
   const layers = geoJsonData ? [

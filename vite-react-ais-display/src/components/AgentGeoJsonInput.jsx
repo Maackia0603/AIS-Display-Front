@@ -164,6 +164,44 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
     updateMapWithCheckedVisualizations(newCheckedSet);
   };
 
+  // 处理点击已保存数据项
+  const handleClickVisualization = (visualizationId) => {
+    const visualization = savedVisualizations.find(v => v.id === visualizationId);
+    if (!visualization) return;
+
+    // 如果没有勾选，先勾选
+    if (!checkedVisualizations.has(visualizationId)) {
+      const newCheckedSet = new Set(checkedVisualizations);
+      newCheckedSet.add(visualizationId);
+      setCheckedVisualizations(newCheckedSet);
+      
+      // 更新地图显示
+      updateMapWithCheckedVisualizations(newCheckedSet);
+    }
+
+    // 聚焦到该数据
+    if (onGeoJsonUpdate) {
+      // 使用原始的onGeoJsonUpdate来聚焦，但只传递该数据用于聚焦计算
+      setTimeout(() => {
+        // 创建一个临时的GeoJSON只用于聚焦
+        const focusGeoJson = visualization.data;
+        // 先更新viewState进行聚焦，但不改变显示的数据
+        if (window.focusOnGeoJsonOnly) {
+          window.focusOnGeoJsonOnly(focusGeoJson);
+        } else {
+          // 备用方案：直接聚焦
+          onGeoJsonUpdate(focusGeoJson);
+          // 然后立即恢复正确的显示数据
+          setTimeout(() => {
+            const newCheckedSet = new Set(checkedVisualizations);
+            newCheckedSet.add(visualizationId);
+            updateMapWithCheckedVisualizations(newCheckedSet);
+          }, 100);
+        }
+      }, 50);
+    }
+  };
+
   // 合并选中的可视化数据并更新地图
   const updateMapWithCheckedVisualizations = (checkedSet) => {
     updateMapWithCheckedVisualizationsAndCurrent(checkedSet, currentGeoJsonData);
@@ -259,7 +297,12 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
     };
 
     if (onGeoJsonUpdate) {
-      onGeoJsonUpdate(mergedGeoJson);
+      // 使用只更新数据不聚焦的方法
+      if (window.updateGeoJsonOnly) {
+        window.updateGeoJsonOnly(mergedGeoJson);
+      } else {
+        onGeoJsonUpdate(mergedGeoJson);
+      }
     }
   };
 
@@ -318,8 +361,14 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
       if (checkedVisualizations.size > 0) {
         // 直接传递新的数据进行合并，避免状态更新延迟
         updateMapWithCheckedVisualizationsAndCurrent(checkedVisualizations, finalGeoJson);
+        // 但只聚焦到新输入的数据
+        setTimeout(() => {
+          if (window.focusOnGeoJsonOnly) {
+            window.focusOnGeoJsonOnly(finalGeoJson);
+          }
+        }, 100);
       } else {
-        // 调用回调函数更新地图
+        // 调用回调函数更新地图（会自动聚焦）
         if (onGeoJsonUpdate) {
           onGeoJsonUpdate(finalGeoJson);
         }
@@ -469,18 +518,43 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          minHeight: '32px'
+                          minHeight: '32px',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#f5f5f5';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
+                        onClick={(e) => {
+                          // 检查点击是否来自勾选框或删除按钮
+                          if (e.target.closest('.ant-checkbox') || e.target.closest('.ant-btn')) {
+                            return; // 如果是，不处理点击
+                          }
+                          handleClickVisualization(visualization.id);
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
                           <Checkbox
                             checked={checkedVisualizations.has(visualization.id)}
-                            onChange={(e) => handleCheckVisualization(visualization.id, e.target.checked)}
+                            onChange={(e) => {
+                              e.stopPropagation(); // 防止触发父元素的点击
+                              handleCheckVisualization(visualization.id, e.target.checked);
+                            }}
                             style={{ marginRight: '6px' }}
                           />
                           <div style={{ flex: 1, lineHeight: '1.2' }}>
-                            <div style={{ fontSize: '12px', fontWeight: '500' }}>
+                            <div style={{ 
+                              fontSize: '12px', 
+                              fontWeight: '500',
+                              color: checkedVisualizations.has(visualization.id) ? '#1890ff' : 'inherit'
+                            }}>
                               {visualization.name.replace('可视化内容 ', '')}
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#999', marginTop: '1px' }}>
+                              点击聚焦到此数据
                             </div>
                           </div>
                         </div>
@@ -488,7 +562,10 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
                           size="small" 
                           danger 
                           icon={<DeleteOutlined />}
-                          onClick={() => handleDeleteSaved(visualization.id)}
+                          onClick={(e) => {
+                            e.stopPropagation(); // 防止触发父元素的点击
+                            handleDeleteSaved(visualization.id);
+                          }}
                           style={{ marginLeft: '6px', fontSize: '11px', height: '20px', width: '20px' }}
                         />
                       </List.Item>
