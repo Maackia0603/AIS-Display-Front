@@ -1,6 +1,6 @@
 import React from 'react';
 import { Segmented } from 'antd';
-import { MessageOutlined, FileTextOutlined, UploadOutlined, SettingOutlined } from '@ant-design/icons';
+import { MessageOutlined, FileTextOutlined, UploadOutlined, SettingOutlined, CodeOutlined } from '@ant-design/icons';
 import '../style/AgentHeader.css';
 
 const AgentHeader = ({ activeTab = 'chat', onTabChange }) => {
@@ -11,9 +11,9 @@ const AgentHeader = ({ activeTab = 'chat', onTabChange }) => {
       icon: <MessageOutlined />
     },
     {
-      label: '文档',
-      value: 'document',
-      icon: <FileTextOutlined />
+      label: '展示',
+      value: 'geojson',
+      icon: <CodeOutlined />
     },
     {
       label: '上传',

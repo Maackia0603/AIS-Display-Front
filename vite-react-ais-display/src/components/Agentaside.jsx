@@ -10,6 +10,7 @@ import AgentHeader from './AgentHeader.jsx';
 import AgentDocument from './AgentDocument.jsx';
 import AgentUpload from './AgentUpload.jsx';
 import AgentSetting from './AgentSetting.jsx';
+import AgentGeoJsonInput from './AgentGeoJsonInput.jsx';
 
 function Agentaside() {
   const [activeTab, setActiveTab] = useState('chat'); // 当前选中的标签页
@@ -129,8 +130,8 @@ function Agentaside() {
     switch (activeTab) {
       case 'chat':
         return renderChatPage();
-      case 'document':
-        return <AgentDocument />;
+      case 'geojson':
+        return <AgentGeoJsonInput />;
       case 'upload':
         return <AgentUpload />;
       case 'settings':

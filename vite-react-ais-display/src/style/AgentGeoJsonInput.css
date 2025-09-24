@@ -1,0 +1,104 @@
+/* Agent侧边栏GeoJSON输入组件样式 */
+.agent-geojson-input {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px;
+  background: #ffffff;
+}
+
+/* 头部区域 */
+.input-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title-icon {
+  color: #1890ff;
+  font-size: 16px;
+}
+
+.header-divider {
+  margin: 8px 0 16px 0;
+}
+
+/* 输入区域 */
+.input-area {
+  flex: 1;
+  margin-bottom: 16px;
+  overflow: hidden; /* 防止内容溢出 */
+}
+
+.geojson-textarea {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fafafa;
+  resize: none; /* 禁止用户调整大小 */
+  height: 300px; /* 固定高度 */
+}
+
+.geojson-textarea:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  background: #ffffff;
+}
+
+.geojson-textarea::placeholder {
+  color: #bfbfbf;
+  font-style: italic;
+}
+
+/* 底部操作区 */
+.input-footer {
+  display: flex;
+  justify-content: flex-start;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* 滚动条样式 */
+.geojson-textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.geojson-textarea::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.geojson-textarea::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.geojson-textarea::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .agent-geojson-input {
+    padding: 12px;
+  }
+  
+  .input-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .geojson-textarea {
+    font-size: 11px;
+  }
+}
