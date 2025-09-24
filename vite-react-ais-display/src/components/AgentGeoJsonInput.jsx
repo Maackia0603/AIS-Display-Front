@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Input, Space, Divider, Typography, message, Alert, Select, Checkbox, List, Collapse } from 'antd';
-import { EyeOutlined, ClearOutlined, FileTextOutlined, FormatPainterOutlined, SaveOutlined, DeleteOutlined, DownOutlined } from '@ant-design/icons';
+import { EyeOutlined, ClearOutlined, FileTextOutlined, FormatPainterOutlined, SaveOutlined, DeleteOutlined, DownOutlined, EditOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import '../style/AgentGeoJsonInput.css';
 
 const { TextArea } = Input;
@@ -13,6 +13,8 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
   const [selectedVisualization, setSelectedVisualization] = useState(null);
   const [currentGeoJsonData, setCurrentGeoJsonData] = useState(null);
   const [checkedVisualizations, setCheckedVisualizations] = useState(new Set());
+  const [editingId, setEditingId] = useState(null);
+  const [editingName, setEditingName] = useState('');
 
   // 从localStorage加载已保存的可视化内容
   useEffect(() => {
@@ -162,6 +164,13 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
     
     // 更新地图显示
     updateMapWithCheckedVisualizations(newCheckedSet);
+    
+    // 如果是取消勾选，聚焦到剩余的所有已选数据
+    if (!checked && newCheckedSet.size > 0) {
+      setTimeout(() => {
+        focusToAllCheckedData(newCheckedSet);
+      }, 200);
+    }
   };
 
   // 处理点击已保存数据项
@@ -199,6 +208,87 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
           }, 100);
         }
       }, 50);
+    }
+  };
+
+  // 开始编辑名称
+  const handleStartEdit = (visualizationId, currentName) => {
+    setEditingId(visualizationId);
+    setEditingName(currentName.replace('可视化内容 ', ''));
+  };
+
+  // 保存名称修改
+  const handleSaveEdit = (visualizationId) => {
+    if (!editingName.trim()) {
+      message.warning('名称不能为空');
+      return;
+    }
+
+    const updatedVisualizations = savedVisualizations.map(v => {
+      if (v.id === visualizationId) {
+        return {
+          ...v,
+          name: `可视化内容 ${editingName.trim()}`
+        };
+      }
+      return v;
+    });
+
+    setSavedVisualizations(updatedVisualizations);
+    localStorage.setItem('savedGeoJsonVisualizations', JSON.stringify(updatedVisualizations));
+    
+    setEditingId(null);
+    setEditingName('');
+    
+    message.success('名称修改成功');
+  };
+
+  // 取消编辑
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditingName('');
+  };
+
+  // 聚焦到所有已选数据的全局范围
+  const focusToAllCheckedData = (checkedSet) => {
+    if (checkedSet.size === 0) return;
+
+    // 收集所有选中的可视化数据
+    const selectedData = Array.from(checkedSet).map(id => {
+      return savedVisualizations.find(v => v.id === id)?.data;
+    }).filter(Boolean);
+
+    // 如果还有当前输入的数据，也包含进来
+    if (currentGeoJsonData && !Array.from(checkedSet).some(id => {
+      const vis = savedVisualizations.find(v => v.id === id);
+      return vis && JSON.stringify(vis.data) === JSON.stringify(currentGeoJsonData);
+    })) {
+      selectedData.push(currentGeoJsonData);
+    }
+
+    if (selectedData.length === 0) return;
+
+    // 合并所有数据用于聚焦计算
+    const allFeatures = [];
+    selectedData.forEach((geoJsonData) => {
+      if (geoJsonData.type === 'FeatureCollection') {
+        allFeatures.push(...geoJsonData.features);
+      } else if (geoJsonData.type === 'Feature') {
+        allFeatures.push(geoJsonData);
+      }
+    });
+
+    if (allFeatures.length === 0) return;
+
+    // 创建用于聚焦的GeoJSON
+    const focusGeoJson = {
+      type: 'FeatureCollection',
+      features: allFeatures
+    };
+
+    // 使用全局聚焦函数
+    if (window.focusOnGeoJsonOnly) {
+      window.focusOnGeoJsonOnly(focusGeoJson);
     }
   };
 
@@ -529,9 +619,13 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
                           e.currentTarget.style.backgroundColor = 'transparent';
                         }}
                         onClick={(e) => {
-                          // 检查点击是否来自勾选框或删除按钮
-                          if (e.target.closest('.ant-checkbox') || e.target.closest('.ant-btn')) {
+                          // 检查点击是否来自勾选框、按钮或输入框
+                          if (e.target.closest('.ant-checkbox') || e.target.closest('.ant-btn') || e.target.closest('.ant-input')) {
                             return; // 如果是，不处理点击
+                          }
+                          // 如果正在编辑，不处理点击
+                          if (editingId === visualization.id) {
+                            return;
                           }
                           handleClickVisualization(visualization.id);
                         }}
@@ -546,16 +640,65 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
                             style={{ marginRight: '6px' }}
                           />
                           <div style={{ flex: 1, lineHeight: '1.2' }}>
-                            <div style={{ 
-                              fontSize: '12px', 
-                              fontWeight: '500',
-                              color: checkedVisualizations.has(visualization.id) ? '#1890ff' : 'inherit'
-                            }}>
-                              {visualization.name.replace('可视化内容 ', '')}
-                            </div>
-                            <div style={{ fontSize: '10px', color: '#999', marginTop: '1px' }}>
-                              点击聚焦到此数据
-                            </div>
+                            {editingId === visualization.id ? (
+                              // 编辑模式
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <Input
+                                  size="small"
+                                  value={editingName}
+                                  onChange={(e) => setEditingName(e.target.value)}
+                                  onPressEnter={() => handleSaveEdit(visualization.id)}
+                                  style={{ fontSize: '12px' }}
+                                  autoFocus
+                                />
+                                <Button
+                                  size="small"
+                                  type="primary"
+                                  icon={<CheckOutlined />}
+                                  onClick={() => handleSaveEdit(visualization.id)}
+                                  style={{ minWidth: '24px', height: '20px', padding: '0' }}
+                                />
+                                <Button
+                                  size="small"
+                                  icon={<CloseOutlined />}
+                                  onClick={handleCancelEdit}
+                                  style={{ minWidth: '24px', height: '20px', padding: '0' }}
+                                />
+                              </div>
+                            ) : (
+                              // 显示模式
+                              <>
+                                <div style={{ 
+                                  fontSize: '12px', 
+                                  fontWeight: '500',
+                                  color: checkedVisualizations.has(visualization.id) ? '#1890ff' : 'inherit',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}>
+                                  <span>{visualization.name.replace('可视化内容 ', '')}</span>
+                                  <Button
+                                    size="small"
+                                    type="text"
+                                    icon={<EditOutlined />}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleStartEdit(visualization.id, visualization.name);
+                                    }}
+                                    style={{ 
+                                      minWidth: '16px', 
+                                      height: '16px', 
+                                      padding: '0',
+                                      fontSize: '10px',
+                                      opacity: 0.6
+                                    }}
+                                  />
+                                </div>
+                                <div style={{ fontSize: '10px', color: '#999', marginTop: '1px' }}>
+                                  点击聚焦到此数据
+                                </div>
+                              </>
+                            )}
                           </div>
                         </div>
                         <Button 
