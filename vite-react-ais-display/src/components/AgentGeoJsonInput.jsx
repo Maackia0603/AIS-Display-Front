@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Button, Input, Space, Divider, Typography, message, Alert } from 'antd';
-import { EyeOutlined, ClearOutlined, FileTextOutlined, FormatPainterOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Button, Input, Space, Divider, Typography, message, Alert, Select, Checkbox, List, Collapse } from 'antd';
+import { EyeOutlined, ClearOutlined, FileTextOutlined, FormatPainterOutlined, SaveOutlined, DeleteOutlined, DownOutlined } from '@ant-design/icons';
 import '../style/AgentGeoJsonInput.css';
 
 const { TextArea } = Input;
@@ -9,6 +9,22 @@ const { Text } = Typography;
 const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
   const [geoJsonText, setGeoJsonText] = useState('');
   const [errorInfo, setErrorInfo] = useState(null);
+  const [savedVisualizations, setSavedVisualizations] = useState([]);
+  const [selectedVisualization, setSelectedVisualization] = useState(null);
+  const [currentGeoJsonData, setCurrentGeoJsonData] = useState(null);
+  const [checkedVisualizations, setCheckedVisualizations] = useState(new Set());
+
+  // 从localStorage加载已保存的可视化内容
+  useEffect(() => {
+    const saved = localStorage.getItem('savedGeoJsonVisualizations');
+    if (saved) {
+      try {
+        setSavedVisualizations(JSON.parse(saved));
+      } catch (error) {
+        console.error('加载保存的数据时出错:', error);
+      }
+    }
+  }, []);
 
   const sampleGeoJson = {
     "type": "FeatureCollection",
@@ -45,7 +61,206 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
   const handleClear = () => {
     setGeoJsonText('');
     setErrorInfo(null); // 清除错误信息
+    setCurrentGeoJsonData(null); // 清空当前可视化数据
+    
+    // 更新地图显示（只显示勾选的保存内容）
+    if (checkedVisualizations.size > 0) {
+      // 传递null作为当前数据，确保只显示勾选的保存内容
+      updateMapWithCheckedVisualizationsAndCurrent(checkedVisualizations, null);
+    } else {
+      // 如果没有勾选任何内容，清空地图
+      if (onGeoJsonUpdate) {
+        onGeoJsonUpdate(null);
+      }
+    }
+    
     message.info('数据已清空');
+  };
+
+  // 保存当前可视化内容
+  const handleSave = () => {
+    if (!currentGeoJsonData) {
+      message.warning('请先可视化数据后再保存');
+      return;
+    }
+
+    const timestamp = new Date().toLocaleString('zh-CN');
+    const newVisualization = {
+      id: Date.now().toString(),
+      name: `可视化内容 ${timestamp}`,
+      data: currentGeoJsonData,
+      timestamp: timestamp,
+      originalText: geoJsonText
+    };
+
+    const updatedVisualizations = [...savedVisualizations, newVisualization];
+    setSavedVisualizations(updatedVisualizations);
+    
+    // 保存到localStorage
+    localStorage.setItem('savedGeoJsonVisualizations', JSON.stringify(updatedVisualizations));
+    
+    // 清空输入框和当前可视化数据
+    setGeoJsonText('');
+    setErrorInfo(null);
+    setCurrentGeoJsonData(null);
+    
+    // 自动勾选新保存的数据
+    const newCheckedSet = new Set(checkedVisualizations);
+    newCheckedSet.add(newVisualization.id);
+    setCheckedVisualizations(newCheckedSet);
+    
+    // 显示包含新保存数据的所有勾选内容（传递更新后的数据列表）
+    updateMapWithCheckedVisualizationsAndCurrentWithData(newCheckedSet, null, updatedVisualizations);
+    
+    message.success(`已保存可视化内容: ${newVisualization.name.replace('可视化内容 ', '')}`);
+  };
+
+
+  // 删除已保存的可视化内容
+  const handleDeleteSaved = (visualizationId) => {
+    const updatedVisualizations = savedVisualizations.filter(v => v.id !== visualizationId);
+    setSavedVisualizations(updatedVisualizations);
+    localStorage.setItem('savedGeoJsonVisualizations', JSON.stringify(updatedVisualizations));
+    
+    // 从勾选状态中移除
+    const newCheckedSet = new Set(checkedVisualizations);
+    newCheckedSet.delete(visualizationId);
+    setCheckedVisualizations(newCheckedSet);
+    
+    if (selectedVisualization === visualizationId) {
+      setSelectedVisualization(null);
+    }
+    
+    // 更新地图显示
+    updateMapWithCheckedVisualizations(newCheckedSet);
+    
+    message.success('已删除保存的内容');
+  };
+
+  // 清空所有保存的内容
+  const handleClearAllSaved = () => {
+    setSavedVisualizations([]);
+    localStorage.removeItem('savedGeoJsonVisualizations');
+    setSelectedVisualization(null);
+    setCurrentGeoJsonData(null);
+    setCheckedVisualizations(new Set());
+    if (onGeoJsonUpdate) {
+      onGeoJsonUpdate(null);
+    }
+    message.success('已清空所有保存的内容');
+  };
+
+  // 处理勾选状态变化
+  const handleCheckVisualization = (visualizationId, checked) => {
+    const newCheckedSet = new Set(checkedVisualizations);
+    if (checked) {
+      newCheckedSet.add(visualizationId);
+    } else {
+      newCheckedSet.delete(visualizationId);
+    }
+    setCheckedVisualizations(newCheckedSet);
+    
+    // 更新地图显示
+    updateMapWithCheckedVisualizations(newCheckedSet);
+  };
+
+  // 合并选中的可视化数据并更新地图
+  const updateMapWithCheckedVisualizations = (checkedSet) => {
+    updateMapWithCheckedVisualizationsAndCurrent(checkedSet, currentGeoJsonData);
+  };
+
+  // 合并选中的可视化数据和指定的当前数据并更新地图
+  const updateMapWithCheckedVisualizationsAndCurrent = (checkedSet, currentData) => {
+    updateMapWithCheckedVisualizationsAndCurrentWithData(checkedSet, currentData, savedVisualizations);
+  };
+
+  // 合并选中的可视化数据和指定的当前数据并更新地图（使用指定的数据列表）
+  const updateMapWithCheckedVisualizationsAndCurrentWithData = (checkedSet, currentData, visualizationsList) => {
+    if (checkedSet.size === 0) {
+      // 如果没有选中任何内容，显示当前输入的数据（如果有）
+      if (onGeoJsonUpdate) {
+        onGeoJsonUpdate(currentData);
+      }
+      return;
+    }
+
+    // 收集所有选中的可视化数据（使用传入的数据列表）
+    const selectedData = Array.from(checkedSet).map(id => {
+      return visualizationsList.find(v => v.id === id)?.data;
+    }).filter(Boolean);
+
+    if (selectedData.length === 0 && !currentData) return;
+
+    // 合并所有选中的数据
+    const allFeatures = [];
+    selectedData.forEach((geoJsonData, index) => {
+      if (geoJsonData.type === 'FeatureCollection') {
+        // 为每个Feature添加来源标识
+        const featuresWithSource = geoJsonData.features.map(feature => ({
+          ...feature,
+          properties: {
+            ...feature.properties,
+            _sourceIndex: index,
+            _sourceName: `保存内容 ${index + 1}`
+          }
+        }));
+        allFeatures.push(...featuresWithSource);
+      } else if (geoJsonData.type === 'Feature') {
+        allFeatures.push({
+          ...geoJsonData,
+          properties: {
+            ...geoJsonData.properties,
+            _sourceIndex: index,
+            _sourceName: `保存内容 ${index + 1}`
+          }
+        });
+      }
+    });
+
+    // 如果还有当前输入的数据，也加入合并（但不包括已保存的重复数据）
+    if (currentData && !Array.from(checkedSet).some(id => {
+      const vis = visualizationsList.find(v => v.id === id);
+      return vis && JSON.stringify(vis.data) === JSON.stringify(currentData);
+    })) {
+      if (currentData.type === 'FeatureCollection') {
+        const currentFeatures = currentData.features.map(feature => ({
+          ...feature,
+          properties: {
+            ...feature.properties,
+            _sourceIndex: selectedData.length,
+            _sourceName: '当前输入'
+          }
+        }));
+        allFeatures.push(...currentFeatures);
+      } else if (currentData.type === 'Feature') {
+        allFeatures.push({
+          ...currentData,
+          properties: {
+            ...currentData.properties,
+            _sourceIndex: selectedData.length,
+            _sourceName: '当前输入'
+          }
+        });
+      }
+    }
+
+    // 如果没有任何特征，显示当前数据
+    if (allFeatures.length === 0 && currentData) {
+      if (onGeoJsonUpdate) {
+        onGeoJsonUpdate(currentData);
+      }
+      return;
+    }
+
+    // 创建合并后的FeatureCollection
+    const mergedGeoJson = {
+      type: 'FeatureCollection',
+      features: allFeatures
+    };
+
+    if (onGeoJsonUpdate) {
+      onGeoJsonUpdate(mergedGeoJson);
+    }
   };
 
   const handleVisualize = () => {
@@ -96,9 +311,18 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
       
       setErrorInfo(null); // 清除错误信息
       
-      // 调用回调函数更新地图
-      if (onGeoJsonUpdate) {
-        onGeoJsonUpdate(finalGeoJson);
+      // 保存当前可视化数据
+      setCurrentGeoJsonData(finalGeoJson);
+      
+      // 如果有选中的保存内容，需要合并显示
+      if (checkedVisualizations.size > 0) {
+        // 直接传递新的数据进行合并，避免状态更新延迟
+        updateMapWithCheckedVisualizationsAndCurrent(checkedVisualizations, finalGeoJson);
+      } else {
+        // 调用回调函数更新地图
+        if (onGeoJsonUpdate) {
+          onGeoJsonUpdate(finalGeoJson);
+        }
       }
       
       message.success('GeoJSON 数据已成功可视化到地图！');
@@ -199,6 +423,84 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
 
       <Divider className="header-divider" />
 
+      {/* 已保存内容选择区 */}
+      {savedVisualizations.length > 0 && (
+        <div className="saved-selector" style={{ marginBottom: '12px' }}>
+          <Collapse
+            size="small"
+            ghost
+            expandIcon={({ isActive }) => <DownOutlined rotate={isActive ? 180 : 0} />}
+            items={[
+              {
+                key: '1',
+                label: (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Text strong style={{ fontSize: '13px' }}>
+                      已保存内容 ({savedVisualizations.length})
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: '11px' }}>
+                      {checkedVisualizations.size > 0 ? `${checkedVisualizations.size}个已选中` : '勾选显示'}
+                    </Text>
+                  </div>
+                ),
+                extra: (
+                  <Button 
+                    size="small" 
+                    danger 
+                    icon={<DeleteOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleClearAllSaved();
+                    }}
+                    style={{ fontSize: '11px', height: '24px' }}
+                  >
+                    清空
+                  </Button>
+                ),
+                children: (
+                  <List
+                    size="small"
+                    bordered
+                    dataSource={savedVisualizations}
+                    renderItem={(visualization) => (
+                      <List.Item
+                        style={{ 
+                          padding: '6px 8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          minHeight: '32px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                          <Checkbox
+                            checked={checkedVisualizations.has(visualization.id)}
+                            onChange={(e) => handleCheckVisualization(visualization.id, e.target.checked)}
+                            style={{ marginRight: '6px' }}
+                          />
+                          <div style={{ flex: 1, lineHeight: '1.2' }}>
+                            <div style={{ fontSize: '12px', fontWeight: '500' }}>
+                              {visualization.name.replace('可视化内容 ', '')}
+                            </div>
+                          </div>
+                        </div>
+                        <Button 
+                          size="small" 
+                          danger 
+                          icon={<DeleteOutlined />}
+                          onClick={() => handleDeleteSaved(visualization.id)}
+                          style={{ marginLeft: '6px', fontSize: '11px', height: '20px', width: '20px' }}
+                        />
+                      </List.Item>
+                    )}
+                    style={{ maxHeight: '100px', overflowY: 'auto' }}
+                  />
+                )
+              }
+            ]}
+          />
+        </div>
+      )}
 
       {/* 输入区域 */}
       <div className="input-area">
@@ -213,13 +515,13 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
           }}
           placeholder="请输入GeoJSON数据，或点击上方按钮加载示例..."
           className="geojson-textarea"
-          rows={15}
+          rows={10}
         />
       </div>
 
       {/* 错误信息显示区域 */}
       {errorInfo && (
-        <div className="error-display" style={{ margin: '12px 0' }}>
+        <div className="error-display" style={{ margin: '8px 0' }}>
           <Alert
             message="JSON 格式错误"
             description={errorInfo}
@@ -227,6 +529,7 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
             showIcon
             closable
             onClose={() => setErrorInfo(null)}
+            style={{ fontSize: '12px' }}
           />
         </div>
       )}
@@ -240,6 +543,15 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
             onClick={handleVisualize}
           >
             可视化到地图
+          </Button>
+          <Button
+            type="primary"
+            icon={<SaveOutlined />}
+            onClick={handleSave}
+            disabled={!currentGeoJsonData}
+            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+          >
+            保存可视化
           </Button>
           <Button
             icon={<FormatPainterOutlined />}
