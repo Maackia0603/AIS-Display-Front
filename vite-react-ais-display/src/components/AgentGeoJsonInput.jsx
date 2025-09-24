@@ -55,10 +55,40 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
     }
     
     try {
-      const parsedGeoJson = JSON.parse(geoJsonText);
+      // 预处理输入的文本，处理转义的双引号
+      let processedText = geoJsonText.trim();
+      
+      // 处理双引号转义 ("" -> ")
+      processedText = processedText.replace(/""/g, '"');
+      
+      // 如果文本被额外的引号包围，去掉外层引号
+      if (processedText.startsWith('"') && processedText.endsWith('"')) {
+        processedText = processedText.slice(1, -1);
+      }
+      
+      const parsedGeoJson = JSON.parse(processedText);
+      
+      // 如果输入的是几何对象（如 MultiPolygon），自动包装成 Feature
+      let finalGeoJson = parsedGeoJson;
+      if (isValidGeometry(parsedGeoJson) && !parsedGeoJson.type.includes('Feature')) {
+        finalGeoJson = {
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              properties: {
+                name: "导入的几何对象",
+                description: "从输入数据自动生成"
+              },
+              geometry: parsedGeoJson
+            }
+          ]
+        };
+        message.info('检测到几何对象，已自动包装为 FeatureCollection');
+      }
       
       // 验证是否是有效的 GeoJSON 格式
-      if (!isValidGeoJson(parsedGeoJson)) {
+      if (!isValidGeoJson(finalGeoJson)) {
         setErrorInfo('数据格式不符合 GeoJSON 规范，请检查数据结构');
         message.error('GeoJSON 格式不正确');
         return;
@@ -68,7 +98,7 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
       
       // 调用回调函数更新地图
       if (onGeoJsonUpdate) {
-        onGeoJsonUpdate(parsedGeoJson);
+        onGeoJsonUpdate(finalGeoJson);
       }
       
       message.success('GeoJSON 数据已成功可视化到地图！');
@@ -125,7 +155,18 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
     }
     
     try {
-      const parsedJson = JSON.parse(geoJsonText);
+      // 预处理输入的文本，处理转义的双引号
+      let processedText = geoJsonText.trim();
+      
+      // 处理双引号转义 ("" -> ")
+      processedText = processedText.replace(/""/g, '"');
+      
+      // 如果文本被额外的引号包围，去掉外层引号
+      if (processedText.startsWith('"') && processedText.endsWith('"')) {
+        processedText = processedText.slice(1, -1);
+      }
+      
+      const parsedJson = JSON.parse(processedText);
       const beautifiedJson = JSON.stringify(parsedJson, null, 2);
       setGeoJsonText(beautifiedJson);
       setErrorInfo(null); // 清除错误信息
