@@ -5,19 +5,207 @@
     height: 100vh;
     overflow: hidden;
     background: #2c353c;
+    display: flex;
 }
 
 .map-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
+    flex: 1;
+    position: relative;
     background: #2c353c;
 }
 
 .map-container .maplibregl-canvas-container {
     background: #2c353c !important;
+}
+
+/* 右侧坐标输入面板 */
+.coordinate-panel {
+    width: 350px;
+    min-width: 300px;
+    height: 100vh;
+    background: #1e1e1e;
+    border-left: 1px solid #333;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+/* 框选模式指示器 */
+.selection-mode-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.selection-cursor {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 20px;
+}
+
+.crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    border: 2px solid #4a9eff;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.crosshair::before,
+.crosshair::after {
+    content: '';
+    position: absolute;
+    background: #4a9eff;
+}
+
+.crosshair::before {
+    top: 50%;
+    left: 2px;
+    right: 2px;
+    height: 2px;
+    transform: translateY(-50%);
+}
+
+.crosshair::after {
+    left: 50%;
+    top: 2px;
+    bottom: 2px;
+    width: 2px;
+    transform: translateX(-50%);
+}
+
+.selection-tip {
+    background: rgba(0, 0, 0, 0.8);
+    color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    text-align: center;
+    white-space: nowrap;
+    border: 1px solid #4a9eff;
+}
+
+/* 框选模式下的地图容器样式 */
+.map-container.selecting {
+    cursor: crosshair;
+}
+
+/* 矩形控制面板样式 */
+.rectangle-control-panel {
+    margin-top: 20px;
+    padding: 15px;
+    background: #2a2a2a;
+    border-radius: 8px;
+    border: 1px solid #444;
+}
+
+.rectangle-control-panel h4 {
+    color: #4a9eff;
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 8px;
+}
+
+.control-group {
+    margin-bottom: 20px;
+}
+
+.control-group h5 {
+    color: #ffffff;
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.control-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 10px;
+}
+
+.control-row label {
+    color: #cccccc;
+    font-size: 12px;
+    min-width: 80px;
+    text-align: right;
+}
+
+.control-row input {
+    flex: 1;
+    padding: 6px 8px;
+    background: #1a1a1a;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 12px;
+}
+
+.control-row input:focus {
+    outline: none;
+    border-color: #4a9eff;
+    box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.2);
+}
+
+.control-row span {
+    color: #cccccc;
+    font-size: 12px;
+}
+
+.button-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.button-group button {
+    padding: 6px 12px;
+    background: #4a9eff;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.button-group button:hover {
+    background: #3a8eef;
+}
+
+.button-group button:active {
+    background: #2a7edf;
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+    .coordinate-panel {
+        width: 300px;
+        min-width: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    .geojson-container {
+        flex-direction: column;
+    }
+    
+    .map-container {
+        height: 60vh;
+    }
+    
+    .coordinate-panel {
+        width: 100%;
+        height: 40vh;
+        border-left: none;
+        border-top: 1px solid #333;
+    }
 }
