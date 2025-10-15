@@ -1,0 +1,27 @@
+{
+  "name": "ais-display-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.3",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.7"
+  },
+  "dependencies": {
+    "@deck.gl/layers": "^9.1.14",
+    "@deck.gl/react": "^9.1.14",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "maplibre-gl": "^5.7.3",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-map-gl": "^8.0.4",
+    "react-router-dom": "^7.9.2"
+  }
+}

@@ -1,0 +1,106 @@
+/* Header组件样式 */
+.header {
+  background: rgba(30, 30, 30, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header-container {
+  width: 100%;
+  margin: 0;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #ffffff;
+  transition: all 0.3s ease;
+}
+
+.logo-link:hover {
+  color: #4a9eff;
+}
+
+.logo-icon {
+  font-size: 24px;
+  margin-right: 8px;
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-link {
+  color: #cccccc;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.nav-link:hover {
+  color: #4a9eff;
+  background: rgba(74, 158, 255, 0.1);
+}
+
+.nav-link.active {
+  color: #4a9eff;
+  background: rgba(74, 158, 255, 0.15);
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  background: #4a9eff;
+  border-radius: 1px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .header-container {
+    padding: 0 15px;
+    height: 50px;
+  }
+  
+  .logo-text {
+    font-size: 18px;
+  }
+  
+  .header-nav {
+    gap: 10px;
+  }
+  
+  .nav-link {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+}
