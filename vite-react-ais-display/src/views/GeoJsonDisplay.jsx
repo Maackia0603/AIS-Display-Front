@@ -725,11 +725,9 @@ export default function GeoJsonDisplay() {
           alert('数据发送成功！');
         }
       } else {
-        console.error('接口返回错误:', response.status, response.statusText);
         alert('数据发送失败，请检查接口状态');
       }
     } catch (error) {
-      console.error('发送数据时出错:', error);
       alert('发送数据时出错: ' + error.message);
     }
   }, [interactiveRect, rectName]);
@@ -791,11 +789,9 @@ export default function GeoJsonDisplay() {
           alert('数据存储成功！');
         }
       } else {
-        console.error('存储接口返回错误:', response.status, response.statusText);
         alert('数据存储失败，请检查接口状态');
       }
     } catch (error) {
-      console.error('存储数据时出错:', error);
       alert('存储数据时出错: ' + error.message);
     }
   }, [interactiveRect, rectName]);

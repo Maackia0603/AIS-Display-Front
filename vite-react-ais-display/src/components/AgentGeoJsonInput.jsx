@@ -22,8 +22,8 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
     if (saved) {
       try {
         setSavedVisualizations(JSON.parse(saved));
-      } catch (error) {
-        console.error('加载保存的数据时出错:', error);
+      } catch {
+        // 忽略解析错误
       }
     }
   }, []);
@@ -537,7 +537,6 @@ const AgentGeoJsonInput = ({ onGeoJsonUpdate = null }) => {
     } catch (error) {
       const errorMessage = `JSON解析错误：${error.message}`;
       setErrorInfo(errorMessage);
-      console.error('JSON解析错误:', error);
       message.error('JSON格式错误，请查看详细错误信息');
     }
   };

@@ -48,8 +48,7 @@ function Agentaside({ onGeoJsonUpdate = null }) {
       }
       
       return null;
-    } catch (error) {
-      console.error('解析API响应数据时出错:', error);
+    } catch {
       return null;
     }
   };
@@ -81,6 +80,7 @@ function Agentaside({ onGeoJsonUpdate = null }) {
             key={index} 
             data={row} 
             metadata={structuredData.metadata} 
+            recordIndex={index}
           />
         ));
         

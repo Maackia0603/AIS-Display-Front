@@ -17,7 +17,6 @@ const processGeoJsonField = (dataString) => {
       }
       // 如果是Geometry类型，包装为Feature
       else if (['Point', 'LineString', 'Polygon', 'MultiPoint', 'MultiLineString', 'MultiPolygon', 'GeometryCollection'].includes(geoJsonData.type)) {
-        console.log('检测到_geojson几何类型:', geoJsonData.type);
         return {
           type: 'Feature',
           geometry: geoJsonData,
@@ -36,12 +35,10 @@ const processGeoJsonField = (dataString) => {
       }
     }
     
-    console.warn('_geojson字段数据格式无效:', data);
     return null;
-  } catch (error) {
-    console.error('_geojson字段数据处理错误:', error);
-    return null;
-  }
+    } catch {
+      return null;
+    }
 };
 
 // 处理PostgreSQL ST_AsGeoJSON返回的GeoJSON数据
@@ -51,7 +48,6 @@ const processGeoJsonData = (dataString) => {
     
     // 检查是否是PostGIS二进制格式（以十六进制字符串开头）
     if (/^[0-9A-Fa-f]+$/.test(data) && data.length > 20) {
-      console.warn('检测到PostGIS二进制格式，建议后端使用ST_AsGeoJSON函数');
       // 对于二进制格式，我们创建一个示例的轨迹数据
       return {
         type: 'Feature',
@@ -88,7 +84,6 @@ const processGeoJsonData = (dataString) => {
                  geoJsonData.type === 'MultiLineString' ||
                  geoJsonData.type === 'MultiPolygon' ||
                  geoJsonData.type === 'GeometryCollection') {
-          console.log('检测到几何类型:', geoJsonData.type, geoJsonData);
           return {
             type: 'Feature',
             geometry: geoJsonData,
@@ -106,8 +101,8 @@ const processGeoJsonData = (dataString) => {
           return geoJsonData.features[0];
         }
       }
-    } catch (jsonError) {
-      console.warn('JSON解析失败，尝试WKT格式解析:', jsonError.message);
+    } catch {
+      // JSON解析失败，继续尝试WKT格式
     }
     
     // 如果JSON解析失败，尝试WKT格式解析
@@ -216,16 +211,63 @@ const processGeoJsonData = (dataString) => {
     }
     
     // 如果都无法解析，返回null
-    console.warn('无法解析的几何数据格式:', data);
     return null;
-  } catch (error) {
-    console.error('几何数据处理错误:', error);
-    return null;
+    } catch {
+      return null;
+    }
+};
+
+// 全局可视化状态管理器
+const globalVisualizationManager = {
+  visualizedRecords: new Map(), // 存储所有已可视化的记录
+  
+  // 添加可视化记录
+  addRecord: (recordIndex, fieldName, geoJson) => {
+    const key = `${recordIndex}_${fieldName}`;
+    globalVisualizationManager.visualizedRecords.set(key, geoJson);
+    globalVisualizationManager.updateMap();
+  },
+  
+  // 移除可视化记录
+  removeRecord: (recordIndex, fieldName) => {
+    const key = `${recordIndex}_${fieldName}`;
+    globalVisualizationManager.visualizedRecords.delete(key);
+    globalVisualizationManager.updateMap();
+  },
+  
+  // 更新地图显示
+  updateMap: () => {
+    if (window.updateGeoJsonOnly) {
+      // 将所有可视化的记录合并为一个FeatureCollection
+      const features = Array.from(globalVisualizationManager.visualizedRecords.values());
+      if (features.length > 0) {
+        const featureCollection = {
+          type: 'FeatureCollection',
+          features: features
+        };
+        window.updateGeoJsonOnly(featureCollection);
+      } else {
+        window.updateGeoJsonOnly(null);
+      }
+    }
+  },
+  
+  // 检查记录是否已可视化
+  isRecordVisualized: (recordIndex, fieldName) => {
+    const key = `${recordIndex}_${fieldName}`;
+    return globalVisualizationManager.visualizedRecords.has(key);
+  },
+  
+  // 独立的跳转逻辑 - 只聚焦到特定记录
+  focusOnRecord: (recordIndex, fieldName, geoJson) => {
+    if (window.focusOnGeoJsonOnly && geoJson) {
+      window.focusOnGeoJsonOnly(geoJson);
+    }
   }
 };
 
 // 数据展示组件
-const DataCard = ({ data, metadata }) => {
+const DataCard = ({ data, metadata, recordIndex = 0 }) => {
   const [visualizedFields, setVisualizedFields] = useState(new Set());
 
   // 检查字段是否为GEOMETRY类型（不包含_geojson字段）
@@ -245,17 +287,16 @@ const DataCard = ({ data, metadata }) => {
 
   // 切换字段的可视化状态
   const toggleVisualization = (fieldName, fieldValue) => {
+    const fieldKey = `${recordIndex}_${fieldName}`; // 创建唯一的字段标识
     const newVisualizedFields = new Set(visualizedFields);
     
-    if (visualizedFields.has(fieldName)) {
+    if (globalVisualizationManager.isRecordVisualized(recordIndex, fieldName)) {
       // 取消可视化
-      newVisualizedFields.delete(fieldName);
-      if (window.updateGeoJsonOnly) {
-        window.updateGeoJsonOnly(null);
-      }
+      newVisualizedFields.delete(fieldKey);
+      globalVisualizationManager.removeRecord(recordIndex, fieldName);
     } else {
       // 开始可视化
-      newVisualizedFields.add(fieldName);
+      newVisualizedFields.add(fieldKey);
       
       let geoJson = null;
       
@@ -269,16 +310,13 @@ const DataCard = ({ data, metadata }) => {
       }
       
       if (geoJson) {
-        console.log('成功解析几何数据:', geoJson);
-        if (window.updateGeoJsonOnly) {
-          window.updateGeoJsonOnly(geoJson);
-        }
-        if (window.focusOnGeoJsonOnly) {
-          window.focusOnGeoJsonOnly(geoJson);
-        }
+        // 添加记录到全局管理器
+        globalVisualizationManager.addRecord(recordIndex, fieldName, geoJson);
+        
+        // 独立的跳转逻辑 - 每次点击可视化按钮都会聚焦到该记录
+        globalVisualizationManager.focusOnRecord(recordIndex, fieldName, geoJson);
       } else {
-        console.error('无法解析几何数据:', fieldValue);
-        newVisualizedFields.delete(fieldName);
+        newVisualizedFields.delete(fieldKey);
         // 显示用户友好的错误提示
         alert('无法解析几何数据，请确保后端使用ST_AsGeoJSON函数返回GeoJSON格式数据');
       }
@@ -341,16 +379,9 @@ const DataCard = ({ data, metadata }) => {
           const normalFieldElements = normalFields.map(([fieldName, fieldValue]) => {
             const isGeometry = isGeometryField(fieldName);
             const showButton = shouldShowVisualizationButton(fieldName);
-            const isVisualized = visualizedFields.has(fieldName);
+            const isVisualized = globalVisualizationManager.isRecordVisualized(recordIndex, fieldName);
             const displayValue = formatFieldValue(fieldValue, fieldName);
             
-            // 调试信息
-            console.log(`字段 ${fieldName}:`, {
-              isGeometry,
-              showButton,
-              fieldValue: typeof fieldValue,
-              columnType: metadata.column_types[metadata.columns.indexOf(fieldName)]
-            });
             
             return (
               <div key={fieldName} className={`data-field ${isGeometry ? 'geometry-field' : ''}`}>
@@ -376,7 +407,7 @@ const DataCard = ({ data, metadata }) => {
           
           // 再渲染_geojson字段
           const geojsonFieldElements = geojsonFields.map(([fieldName, fieldValue]) => {
-            const isVisualized = visualizedFields.has(fieldName);
+            const isVisualized = globalVisualizationManager.isRecordVisualized(recordIndex, fieldName);
             
             return (
               <div key={fieldName} className="data-field">

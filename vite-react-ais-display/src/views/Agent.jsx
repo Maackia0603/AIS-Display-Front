@@ -72,7 +72,6 @@ function Agent() {
       // 检查边界是否有效
       if (!isFinite(bounds.minLng) || !isFinite(bounds.maxLng) || 
           !isFinite(bounds.minLat) || !isFinite(bounds.maxLat)) {
-        console.warn('无效的边界值，使用默认视图');
         return;
       }
       
@@ -84,17 +83,17 @@ function Agent() {
       const latDiff = bounds.maxLat - bounds.minLat;
       const maxDiff = Math.max(lngDiff, latDiff);
       
-      // 更精确的缩放级别计算 - 稍微拉远视角
-      let zoom = 12; // 默认缩放级别（比之前更远）
+      // 更精确的缩放级别计算 - 大幅拉远视角以便看到全部信息
+      let zoom = 8; // 默认缩放级别（比之前更远很多）
       if (maxDiff > 50) zoom = 1;      // 全球范围
-      else if (maxDiff > 20) zoom = 3;  // 大洲范围
-      else if (maxDiff > 10) zoom = 5;  // 国家范围
-      else if (maxDiff > 5) zoom = 7;   // 省份范围
-      else if (maxDiff > 2) zoom = 9;   // 城市范围
-      else if (maxDiff > 1) zoom = 11;  // 区域范围
-      else if (maxDiff > 0.5) zoom = 13; // 街区范围
-      else if (maxDiff > 0.1) zoom = 15; // 建筑范围
-      else zoom = 16; // 非常小的区域
+      else if (maxDiff > 20) zoom = 2;  // 大洲范围
+      else if (maxDiff > 10) zoom = 3;  // 国家范围
+      else if (maxDiff > 5) zoom = 4;   // 省份范围
+      else if (maxDiff > 2) zoom = 5;   // 城市范围
+      else if (maxDiff > 1) zoom = 6;   // 区域范围
+      else if (maxDiff > 0.5) zoom = 7; // 街区范围
+      else if (maxDiff > 0.1) zoom = 8; // 建筑范围
+      else zoom = 9; // 非常小的区域
 
       setViewState(prev => ({
         ...prev,
@@ -106,11 +105,9 @@ function Agent() {
         transitionDuration: 1500 // 增加动画时间
       }));
 
-      // 添加成功提示
-      console.log(`成功聚焦到数据区域: 中心(${centerLng.toFixed(4)}, ${centerLat.toFixed(4)}), 缩放级别: ${zoom}`);
       
-    } catch (error) {
-      console.error('聚焦到GeoJSON时出错:', error);
+    } catch {
+      // 忽略聚焦错误
     }
   }, [setViewState]);
 
