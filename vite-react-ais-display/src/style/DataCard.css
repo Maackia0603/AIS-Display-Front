@@ -1,0 +1,245 @@
+/* 数据展示组件 - 简洁美观设计 */
+.data-display {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e1e5e9;
+  margin: 16px 0;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  max-width: 100%;
+  min-width: 280px;
+}
+
+.data-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 16px 20px;
+  border-bottom: 1px solid #e1e5e9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.data-title {
+  font-weight: 600;
+  color: #495057;
+  font-size: 15px;
+}
+
+.data-count {
+  background: #6c757d;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.data-fields {
+  padding: 12px 20px;
+}
+
+.data-field {
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+  margin: 2px 0;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.data-field:last-child {
+  border-bottom: none;
+}
+
+.data-field.geometry-field {
+  background: rgba(40, 167, 69, 0.03);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border-bottom: none;
+  margin: 4px 0;
+}
+
+.field-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+}
+
+.field-name {
+  font-weight: 500;
+  color: #495057;
+  font-size: 14px;
+  width: 100px;
+  flex-shrink: 0;
+  text-align: left;
+}
+
+.field-value {
+  color: #6c757d;
+  font-size: 13px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+  cursor: pointer;
+  position: relative;
+}
+
+.field-value:hover {
+  background: #f8f9fa;
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+}
+
+.field-value.long-data {
+  white-space: normal;
+  word-break: break-all;
+  max-width: none;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.field-value-with-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.field-value-with-button .field-value {
+  flex: 1;
+  margin: 0;
+}
+
+/* _geojson字段只显示按钮，按钮与数值对齐 */
+.field-value-with-button:has(button:only-child) {
+  justify-content: flex-start;
+}
+
+/* 几何字段按钮样式 - 简洁设计 */
+.geometry-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(40, 167, 69, 0.2);
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.geometry-btn:hover {
+  background: #218838;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+.geometry-btn.active {
+  background: #dc3545;
+  box-shadow: 0 1px 3px rgba(220, 53, 69, 0.2);
+}
+
+.geometry-btn.active:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .data-display {
+    margin: 12px 0;
+    min-width: 260px;
+  }
+  
+  .data-header {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  
+  .data-fields {
+    padding: 8px 16px;
+  }
+  
+  .data-field {
+    padding: 4px 0;
+    margin: 1px 0;
+  }
+  
+  .data-field.geometry-field {
+    padding: 4px 8px;
+    margin: 2px 0;
+  }
+  
+  .field-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .field-name {
+    width: auto;
+  }
+  
+  .field-value {
+    text-align: left;
+    max-width: none;
+    white-space: normal;
+  }
+  
+  .geometry-btn {
+    align-self: flex-start;
+    height: 22px;
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .data-display {
+    margin: 8px 0;
+    min-width: 240px;
+  }
+  
+  .data-header {
+    padding: 8px 12px;
+  }
+  
+  .data-fields {
+    padding: 6px 12px;
+  }
+  
+  .data-field {
+    padding: 3px 0;
+  }
+  
+  .data-field.geometry-field {
+    padding: 3px 6px;
+  }
+  
+  .field-name {
+    font-size: 13px;
+  }
+  
+  .field-value {
+    font-size: 12px;
+  }
+  
+  .geometry-btn {
+    height: 20px;
+    font-size: 9px;
+    padding: 2px 5px;
+  }
+}

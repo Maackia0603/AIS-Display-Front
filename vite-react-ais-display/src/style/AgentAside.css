@@ -143,6 +143,20 @@
     margin: 6px 0;
 }
 
+/* 数据卡片容器样式 */
+.data-cards-container {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.msg-text {
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #262626;
+}
+
 /* 页面内容样式 */
 .page-content {
     padding: 16px;

@@ -11,6 +11,7 @@ import AgentDocument from './AgentDocument.jsx';
 import AgentUpload from './AgentUpload.jsx';
 import AgentSetting from './AgentSetting.jsx';
 import AgentGeoJsonInput from './AgentGeoJsonInput.jsx';
+import DataCard from './DataCard.jsx';
 
 function Agentaside({ onGeoJsonUpdate = null }) {
   const [activeTab, setActiveTab] = useState('chat'); // 当前选中的标签页
@@ -25,6 +26,34 @@ function Agentaside({ onGeoJsonUpdate = null }) {
   });
 
 
+  // 解析API返回的数据
+  const parseApiResponse = (payload) => {
+    try {
+      // 检查是否有data字段
+      if (payload && payload.data) {
+        let dataStr = payload.data;
+        
+        // 如果data是字符串，尝试解析为JSON
+        if (typeof dataStr === 'string') {
+          dataStr = JSON.parse(dataStr);
+        }
+        
+        // 检查是否包含metadata和data字段
+        if (dataStr && dataStr.metadata && dataStr.data && Array.isArray(dataStr.data)) {
+          return {
+            metadata: dataStr.metadata,
+            dataRows: dataStr.data
+          };
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('解析API响应数据时出错:', error);
+      return null;
+    }
+  };
+
   const sendMessage = async () => {
     const content = inputValue.trim();
     if (!content || isLoading) return;
@@ -38,15 +67,44 @@ function Agentaside({ onGeoJsonUpdate = null }) {
       const payload = await doFetch({
         body: JSON.stringify({ question: content })
       });
-      const replyRaw = (payload && (payload.final || payload.content || payload.message || payload.answer))
-        || (typeof payload === 'string' ? payload : '')
-        || '抱歉，我没有理解您的问题。';
-      // 替换最后一个loading assistant为最终内容（Markdown）
+      
+      // 尝试解析结构化数据
+      const structuredData = parseApiResponse(payload);
+      
+      let replyRaw = '';
+      let dataCards = null;
+      
+      if (structuredData) {
+        // 如果有结构化数据，创建数据卡片
+        dataCards = structuredData.dataRows.map((row, index) => (
+          <DataCard 
+            key={index} 
+            data={row} 
+            metadata={structuredData.metadata} 
+          />
+        ));
+        
+        // 生成简单的文本回复
+        replyRaw = `查询完成，共找到 ${structuredData.metadata.row_count} 条记录。`;
+      } else {
+        // 如果没有结构化数据，使用原来的逻辑
+        replyRaw = (payload && (payload.final || payload.content || payload.message || payload.answer))
+          || (typeof payload === 'string' ? payload : '')
+          || '抱歉，我没有理解您的问题。';
+      }
+      
+      // 替换最后一个loading assistant为最终内容
       setMessages(prev => {
         const next = [...prev];
         for (let i = next.length - 1; i >= 0; i--) {
           if (next[i].role === 'assistant' && next[i].loading) {
-            next[i] = { role: 'assistant', content: replyRaw, loading: false, markdown: true };
+            next[i] = { 
+              role: 'assistant', 
+              content: replyRaw, 
+              loading: false, 
+              markdown: !structuredData,
+              dataCards: dataCards
+            };
             break;
           }
         }
@@ -90,6 +148,13 @@ function Agentaside({ onGeoJsonUpdate = null }) {
             <div key={i} className={`chat-msg ${m.role} ${m.loading ? 'loading' : ''}`}>
               {m.loading ? (
                 <div className="msg-content"><span className="dot dot1"></span><span className="dot dot2"></span><span className="dot dot3"></span></div>
+              ) : m.dataCards ? (
+                <div className="msg-content">
+                  <div className="msg-text">{m.content}</div>
+                  <div className="data-cards-container">
+                    {m.dataCards}
+                  </div>
+                </div>
               ) : m.markdown ? (
                 <div className="msg-content">
                   <div className="markdown-body">

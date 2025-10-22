@@ -79,25 +79,36 @@ function Agent() {
       const centerLng = (bounds.minLng + bounds.maxLng) / 2;
       const centerLat = (bounds.minLat + bounds.maxLat) / 2;
       
-      // 计算合适的缩放级别
+      // 计算合适的缩放级别 - 优化算法
       const lngDiff = bounds.maxLng - bounds.minLng;
       const latDiff = bounds.maxLat - bounds.minLat;
       const maxDiff = Math.max(lngDiff, latDiff);
       
-      let zoom = 13;
-      if (maxDiff > 10) zoom = 4;
-      else if (maxDiff > 5) zoom = 6;
-      else if (maxDiff > 1) zoom = 8;
-      else if (maxDiff > 0.1) zoom = 11;
-      else zoom = 14;
+      // 更精确的缩放级别计算 - 稍微拉远视角
+      let zoom = 12; // 默认缩放级别（比之前更远）
+      if (maxDiff > 50) zoom = 1;      // 全球范围
+      else if (maxDiff > 20) zoom = 3;  // 大洲范围
+      else if (maxDiff > 10) zoom = 5;  // 国家范围
+      else if (maxDiff > 5) zoom = 7;   // 省份范围
+      else if (maxDiff > 2) zoom = 9;   // 城市范围
+      else if (maxDiff > 1) zoom = 11;  // 区域范围
+      else if (maxDiff > 0.5) zoom = 13; // 街区范围
+      else if (maxDiff > 0.1) zoom = 15; // 建筑范围
+      else zoom = 16; // 非常小的区域
 
       setViewState(prev => ({
         ...prev,
         longitude: centerLng,
         latitude: centerLat,
         zoom: zoom,
-        transitionDuration: 1000
+        pitch: 0, // 重置倾斜角度以便更好地查看
+        bearing: 0, // 重置旋转角度
+        transitionDuration: 1500 // 增加动画时间
       }));
+
+      // 添加成功提示
+      console.log(`成功聚焦到数据区域: 中心(${centerLng.toFixed(4)}, ${centerLat.toFixed(4)}), 缩放级别: ${zoom}`);
+      
     } catch (error) {
       console.error('聚焦到GeoJSON时出错:', error);
     }
@@ -143,12 +154,49 @@ function Agent() {
       filled: true,
       extruded: false,
       lineWidthScale: 20,
-      lineWidthMinPixels: 2,
-      getFillColor: [160, 160, 180, 200],
-      getLineColor: [80, 80, 80, 255],
-      getRadius: 100,
-      getLineWidth: 1,
-      getElevation: 30
+      lineWidthMinPixels: 3,
+      getRadius: 150,
+      getLineWidth: 3,
+      getElevation: 50,
+      // 根据几何类型设置不同颜色
+      getFillColor: (feature) => {
+        const geometryType = feature.geometry?.type;
+        switch (geometryType) {
+          case 'Point':
+            return [0, 255, 0, 200];        // 绿色点
+          case 'LineString':
+            return [0, 0, 255, 200];        // 蓝色线
+          case 'Polygon':
+            return [255, 0, 0, 180];        // 红色多边形
+          case 'MultiPolygon':
+            return [255, 165, 0, 180];      // 橙色多多边形
+          case 'MultiPoint':
+            return [0, 255, 255, 200];      // 青色多点
+          case 'MultiLineString':
+            return [128, 0, 128, 200];      // 紫色多线
+          default:
+            return [255, 0, 0, 180];        // 默认红色
+        }
+      },
+      getLineColor: (feature) => {
+        const geometryType = feature.geometry?.type;
+        switch (geometryType) {
+          case 'Point':
+            return [0, 200, 0, 255];        // 深绿色边框
+          case 'LineString':
+            return [0, 0, 200, 255];        // 深蓝色边框
+          case 'Polygon':
+            return [200, 0, 0, 255];        // 深红色边框
+          case 'MultiPolygon':
+            return [200, 100, 0, 255];      // 深橙色边框
+          case 'MultiPoint':
+            return [0, 200, 200, 255];      // 深青色边框
+          case 'MultiLineString':
+            return [100, 0, 100, 255];      // 深紫色边框
+          default:
+            return [200, 0, 0, 255];        // 默认深红色边框
+        }
+      }
     })
   ] : [];
 
